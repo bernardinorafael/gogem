@@ -18,68 +18,74 @@ func NewHTTPError(w http.ResponseWriter, err error) {
 	}
 
 	w.WriteHeader(http.StatusInternalServerError)
-	_ = json.NewEncoder(w).Encode(NewInternalServerError("an unexpected error occurred"))
+	_ = json.NewEncoder(w).Encode(New(
+		"an unexpected error occurred",
+		WithHTTPCode(http.StatusInternalServerError),
+		WithTag(INTERNAL_SERVER_ERROR),
+		WithError(err),
+	))
 }
 
-func NewBadRequest(msg string) *Fault {
-	return &Fault{
-		HTTPCode: http.StatusBadRequest,
-		Err:      nil,
-		Tag:      BAD_REQUEST,
-		Message:  msg,
-	}
+func NewBadRequest(message string) *Fault {
+	return New(
+		message,
+		WithHTTPCode(http.StatusBadRequest),
+		WithTag(BAD_REQUEST),
+	)
 }
 
-func NewNotFound(msg string) *Fault {
-	return &Fault{
-		HTTPCode: http.StatusNotFound,
-		Err:      nil,
-		Tag:      NOT_FOUND,
-		Message:  msg,
-	}
+func NewNotFound(message string) *Fault {
+	return New(
+		message,
+		WithHTTPCode(http.StatusNotFound),
+		WithTag(NOT_FOUND),
+	)
 }
 
-func NewInternalServerError(msg string) *Fault {
-	return &Fault{
-		HTTPCode: http.StatusInternalServerError,
-		Err:      nil,
-		Tag:      INTERNAL_SERVER_ERROR,
-		Message:  msg,
-	}
+func NewInternalServerError(message string) *Fault {
+	return New(
+		message,
+		WithHTTPCode(http.StatusInternalServerError),
+		WithTag(INTERNAL_SERVER_ERROR),
+	)
 }
 
-func NewUnauthorized(msg string) *Fault {
-	return &Fault{
-		HTTPCode: http.StatusUnauthorized,
-		Err:      nil,
-		Tag:      UNAUTHORIZED,
-		Message:  msg,
-	}
+func NewUnauthorized(message string) *Fault {
+	return New(
+		message,
+		WithHTTPCode(http.StatusUnauthorized),
+		WithTag(UNAUTHORIZED),
+	)
 }
 
-func NewForbidden(msg string) *Fault {
-	return &Fault{
-		HTTPCode: http.StatusForbidden,
-		Err:      nil,
-		Tag:      FORBIDDEN,
-		Message:  msg,
-	}
+func NewForbidden(message string) *Fault {
+	return New(
+		message,
+		WithHTTPCode(http.StatusForbidden),
+		WithTag(FORBIDDEN),
+	)
 }
 
-func NewConflict(msg string) *Fault {
-	return &Fault{
-		HTTPCode: http.StatusConflict,
-		Err:      nil,
-		Tag:      CONFLICT,
-		Message:  msg,
-	}
+func NewConflict(message string) *Fault {
+	return New(
+		message,
+		WithHTTPCode(http.StatusConflict),
+		WithTag(CONFLICT),
+	)
 }
 
-func NewTooManyRequests(msg string) *Fault {
-	return &Fault{
-		HTTPCode: http.StatusTooManyRequests,
-		Err:      nil,
-		Tag:      TOO_MANY_REQUESTS,
-		Message:  msg,
-	}
+func NewTooManyRequests(message string) *Fault {
+	return New(
+		message,
+		WithHTTPCode(http.StatusTooManyRequests),
+		WithTag(TOO_MANY_REQUESTS),
+	)
+}
+
+func NewUnprocessableEntity(message string) *Fault {
+	return New(
+		message,
+		WithHTTPCode(http.StatusUnprocessableEntity),
+		WithTag(UNPROCESSABLE_ENTITY),
+	)
 }

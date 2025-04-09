@@ -16,34 +16,43 @@ type Fault struct {
 // The message is used to describe the error in detail
 //
 // The default HTTP code is 400.
-func New(message string) *Fault {
-	return &Fault{
+func New(msg string, options ...func(*Fault)) *Fault {
+	fault := Fault{
 		HTTPCode: http.StatusBadRequest,
 		Err:      nil,
 		Tag:      UNTAGGED,
-		Message:  message,
+		Message:  msg,
 	}
+
+	for _, fn := range options {
+		fn(&fault)
+	}
+
+	return &fault
 }
 
 // WithHTTPCode sets the HTTP code for the fault
-func (f *Fault) WithHTTPCode(code int) *Fault {
-	f.HTTPCode = code
-	return f
+func WithHTTPCode(code int) func(*Fault) {
+	return func(f *Fault) {
+		f.HTTPCode = code
+	}
 }
 
 // WithError sets the error for the fault
-func (f *Fault) WithError(err error) *Fault {
-	if err == nil {
-		return f
+func WithError(err error) func(*Fault) {
+	return func(f *Fault) {
+		if err == nil {
+			return
+		}
+		f.Err = err
 	}
-	f.Err = err
-	return f
 }
 
 // WithTag sets the tag for the fault
-func (f *Fault) WithTag(tag Tag) *Fault {
-	f.Tag = tag
-	return f
+func WithTag(tag Tag) func(*Fault) {
+	return func(f *Fault) {
+		f.Tag = tag
+	}
 }
 
 // GetHTTPCode returns the HTTP code for the fault

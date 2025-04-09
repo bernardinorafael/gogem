@@ -25,6 +25,7 @@ const (
 	FORBIDDEN             Tag = "FORBIDDEN"
 	CONFLICT              Tag = "CONFLICT"
 	TOO_MANY_REQUESTS     Tag = "TOO_MANY_REQUESTS"
+	UNPROCESSABLE_ENTITY  Tag = "UNPROCESSABLE_ENTITY"
 )
 
 // GetTag returns the first tag of the error
