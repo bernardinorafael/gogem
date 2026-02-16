@@ -1,27 +1,34 @@
-// Package server provides an HTTP server wrapper with sensible defaults,
-// chi router integration, and graceful shutdown via OS signals.
+// Package server provides an HTTP server wrapper with sensible defaults
+// and graceful shutdown via OS signals.
 //
 // The server uses the functional options pattern for configuration and comes
-// with pre-configured timeouts (read: 5s, write: 10s, idle: 1m).
+// with pre-configured timeouts (read: 5s, write: 10s, idle: 1m, shutdown: 30s).
 //
 // Basic usage:
 //
 //	srv := server.New(
-//	    server.WithRouter(router),
-//	    server.WithPort("3000"),
+//	    server.WithHandler(router),
+//	    server.WithPort(3000),
 //	)
 //
-//	shutdownErr := srv.GracefulShutdown(ctx, 30*time.Second)
-//
-//	if err := srv.Start(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-//	    log.Fatal("server failed", "err", err)
+//	if err := srv.ListenAndServe(); err != nil {
+//	    log.Fatal("server error", "err", err)
 //	}
 //
-//	if err := <-shutdownErr; err != nil {
-//	    log.Fatal("graceful shutdown failed", "err", err)
-//	}
+// ListenAndServe blocks until a shutdown signal is received (SIGHUP, SIGINT,
+// SIGTERM, SIGQUIT), then gracefully shuts down allowing in-flight requests
+// to complete within the configured timeout.
 //
-// GracefulShutdown listens for SIGHUP, SIGINT, SIGTERM, and SIGQUIT signals,
-// then shuts down the server within the specified timeout, allowing in-flight
-// requests to complete.
+// Custom configuration:
+//
+//	srv := server.New(
+//	    server.WithHandler(router),
+//	    server.WithAddr("127.0.0.1:3000"),
+//	    server.WithReadTimeout(10*time.Second),
+//	    server.WithWriteTimeout(30*time.Second),
+//	    server.WithShutdownTimeout(60*time.Second),
+//	)
+//
+// WithHandler accepts any http.Handler, so it works with chi, gorilla, stdlib mux,
+// or any custom router.
 package server

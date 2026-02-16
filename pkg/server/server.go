@@ -2,29 +2,30 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
-
-	"github.com/go-chi/chi/v5"
 )
 
 type Server struct {
-	server *http.Server
+	server          *http.Server
+	shutdownTimeout time.Duration
 }
 
 func New(opts ...func(*Server)) *Server {
 	srv := Server{
 		server: &http.Server{
-			Addr:         fmt.Sprintf(":%s", "8080"),
+			Addr:         ":8080",
 			IdleTimeout:  time.Minute,
-			ReadTimeout:  time.Second * 5,
-			WriteTimeout: time.Second * 10,
-			Handler:      chi.NewMux(),
+			ReadTimeout:  5 * time.Second,
+			WriteTimeout: 10 * time.Second,
+			Handler:      http.DefaultServeMux,
 		},
+		shutdownTimeout: 30 * time.Second,
 	}
 
 	for _, fn := range opts {
@@ -34,45 +35,75 @@ func New(opts ...func(*Server)) *Server {
 	return &srv
 }
 
-func WithRouter(router *chi.Mux) func(*Server) {
+func WithHandler(handler http.Handler) func(*Server) {
 	return func(s *Server) {
-		s.server.Handler = router
+		s.server.Handler = handler
 	}
 }
 
-func WithPort(port string) func(*Server) {
+func WithPort(port int) func(*Server) {
 	return func(s *Server) {
-		s.server.Addr = fmt.Sprintf(":%s", port)
+		s.server.Addr = fmt.Sprintf(":%d", port)
 	}
 }
 
-func (s *Server) Start() error {
-	return s.server.ListenAndServe()
+func WithAddr(addr string) func(*Server) {
+	return func(s *Server) {
+		s.server.Addr = addr
+	}
 }
 
-func (s *Server) Shutdown(ctx context.Context) error {
-	return s.server.Shutdown(ctx)
+func WithReadTimeout(d time.Duration) func(*Server) {
+	return func(s *Server) {
+		s.server.ReadTimeout = d
+	}
 }
 
-func (s *Server) GracefulShutdown(ctx context.Context, timeout time.Duration) chan error {
-	shutdownErr := make(chan error)
+func WithWriteTimeout(d time.Duration) func(*Server) {
+	return func(s *Server) {
+		s.server.WriteTimeout = d
+	}
+}
+
+func WithIdleTimeout(d time.Duration) func(*Server) {
+	return func(s *Server) {
+		s.server.IdleTimeout = d
+	}
+}
+
+func WithShutdownTimeout(d time.Duration) func(*Server) {
+	return func(s *Server) {
+		s.shutdownTimeout = d
+	}
+}
+
+// ListenAndServe starts the HTTP server and blocks until a shutdown signal
+// is received (SIGHUP, SIGINT, SIGTERM, SIGQUIT). It then gracefully shuts
+// down the server, allowing in-flight requests to complete within the
+// configured shutdown timeout.
+func (s *Server) ListenAndServe() error {
+	errCh := make(chan error, 1)
 
 	go func() {
-		stop := make(chan os.Signal, 1)
-		signal.Notify(
-			stop,
-			syscall.SIGHUP,
-			syscall.SIGINT,
-			syscall.SIGTERM,
-			syscall.SIGQUIT,
-		)
-		<-stop
-
-		ctx, cancel := context.WithTimeout(ctx, timeout)
-		defer cancel()
-
-		shutdownErr <- s.Shutdown(ctx)
+		if err := s.server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
+			errCh <- err
+		}
 	}()
 
-	return shutdownErr
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+
+	select {
+	case err := <-errCh:
+		return err
+	case <-stop:
+		ctx, cancel := context.WithTimeout(context.Background(), s.shutdownTimeout)
+		defer cancel()
+		return s.server.Shutdown(ctx)
+	}
+}
+
+// Addr returns the server's listen address.
+func (s *Server) Addr() string {
+	return s.server.Addr
 }
