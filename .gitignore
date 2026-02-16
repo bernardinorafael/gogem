@@ -5,6 +5,10 @@
 *.dylib
 
 .DS_Store
+.claude
+.docs
+.vscode
+CLAUDE.md
 
 #ide
 .run/
