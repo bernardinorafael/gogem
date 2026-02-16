@@ -1,4 +1,4 @@
-module github.com/bernardinorafael/gogem/httputil
+module github.com/bernardinorafael/gogem/pkg/httputil
 
 go 1.24.1
 

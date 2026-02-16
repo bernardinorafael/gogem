@@ -6,7 +6,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/bernardinorafael/gogem/fault"
+	"github.com/bernardinorafael/gogem/pkg/fault"
 	"github.com/charmbracelet/log"
 	"github.com/redis/go-redis/v9"
 )

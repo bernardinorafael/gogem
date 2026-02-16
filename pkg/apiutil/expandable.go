@@ -3,7 +3,7 @@ package apiutil
 import (
 	"encoding/json"
 
-	"github.com/bernardinorafael/gogem/uid"
+	"github.com/bernardinorafael/gogem/pkg/uid"
 )
 
 type Expandable[T any] struct {

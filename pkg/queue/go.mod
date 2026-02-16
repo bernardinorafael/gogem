@@ -1,4 +1,4 @@
-module github.com/bernardinorafael/gogem/queue
+module github.com/bernardinorafael/gogem/pkg/queue
 
 go 1.24.1
 

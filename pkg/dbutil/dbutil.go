@@ -5,7 +5,7 @@ import (
 	"errors"
 	"regexp"
 
-	"github.com/bernardinorafael/gogem/fault"
+	"github.com/bernardinorafael/gogem/pkg/fault"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 )

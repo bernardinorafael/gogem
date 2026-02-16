@@ -1,4 +1,4 @@
-module github.com/bernardinorafael/gogem/crypto
+module github.com/bernardinorafael/gogem/pkg/crypto
 
 go 1.24.1
 

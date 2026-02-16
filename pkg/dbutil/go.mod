@@ -1,4 +1,4 @@
-module github.com/bernardinorafael/gogem/dbutil
+module github.com/bernardinorafael/gogem/pkg/dbutil
 
 go 1.24.1
 

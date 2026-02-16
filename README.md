@@ -7,27 +7,27 @@ A collection of reusable Go packages for building web applications. Each package
 Install only the packages you need:
 
 ```bash
-go get github.com/bernardinorafael/gogem/fault@latest
-go get github.com/bernardinorafael/gogem/httputil@latest
-go get github.com/bernardinorafael/gogem/uid@latest
+go get github.com/bernardinorafael/gogem/pkg/fault@latest
+go get github.com/bernardinorafael/gogem/pkg/httputil@latest
+go get github.com/bernardinorafael/gogem/pkg/uid@latest
 ```
 
 ## Packages
 
 | Package | Description | Dependencies |
 |---------|-------------|-------------|
-| [`fault`](./fault) | Standardized REST error type with HTTP codes, tags, and field-level validation errors | - |
-| [`httputil`](./httputil) | Request parsing, JSON response writing, and `WithValidation[T]` generic middleware | fault |
-| [`pagination`](./pagination) | Generic `Paginated[T]` container with computed metadata | - |
-| [`uid`](./uid) | K-Sortable unique identifier generation with optional prefixes | - |
-| [`function`](./function) | Generic `Map` and `ForEach` utilities | - |
-| [`apiutil`](./apiutil) | Generic `Expandable[T]` for API responses (marshals as ID or full object) | uid |
-| [`dbutil`](./dbutil) | PostgreSQL helpers: constraint violation detection, JSONB type, transaction wrapper | fault, sqlx, lib/pq |
-| [`cache`](./cache) | Redis wrapper with generic `GetOrSet[T]` pattern | fault, go-redis, charmbracelet/log |
-| [`crypto`](./crypto) | Password hashing (bcrypt), JWT tokens (HS256), OTP generation (HMAC-SHA256) | uid, golang-jwt, x/crypto |
-| [`queue`](./queue) | AWS SQS client wrapper (publish, consume, delete) | aws-sdk-go-v2 |
-| [`logger`](./logger) | Structured logging (JSON in production, text in development) | charmbracelet/log |
-| [`server`](./server) | HTTP server with chi router, sensible defaults, and graceful shutdown | go-chi |
+| [`fault`](./pkg/fault) | Standardized REST error type with HTTP codes, tags, and field-level validation errors | - |
+| [`httputil`](./pkg/httputil) | Request parsing, JSON response writing, and `WithValidation[T]` generic middleware | fault |
+| [`pagination`](./pkg/pagination) | Generic `Paginated[T]` container with computed metadata | - |
+| [`uid`](./pkg/uid) | K-Sortable unique identifier generation with optional prefixes | - |
+| [`function`](./pkg/function) | Generic `Map` and `ForEach` utilities | - |
+| [`apiutil`](./pkg/apiutil) | Generic `Expandable[T]` for API responses (marshals as ID or full object) | uid |
+| [`dbutil`](./pkg/dbutil) | PostgreSQL helpers: constraint violation detection, JSONB type, transaction wrapper | fault, sqlx, lib/pq |
+| [`cache`](./pkg/cache) | Redis wrapper with generic `GetOrSet[T]` pattern | fault, go-redis, charmbracelet/log |
+| [`crypto`](./pkg/crypto) | Password hashing (bcrypt), JWT tokens (HS256), OTP generation (HMAC-SHA256) | uid, golang-jwt, x/crypto |
+| [`queue`](./pkg/queue) | AWS SQS client wrapper (publish, consume, delete) | aws-sdk-go-v2 |
+| [`logger`](./pkg/logger) | Structured logging (JSON in production, text in development) | charmbracelet/log |
+| [`server`](./pkg/server) | HTTP server with chi router, sensible defaults, and graceful shutdown | go-chi |
 
 ## Development
 
@@ -51,17 +51,11 @@ All modules are already listed in `go.work`, so cross-module imports resolve loc
 ### Commands
 
 ```bash
-# Vet a specific module
-cd fault && go vet ./...
-
-# Run tests for a specific module
-cd fault && go test ./...
-
-# Tidy a specific module's dependencies
-cd fault && go mod tidy
-
-# Format all code
-gofmt -w .
+make help      # show all available commands
+make vet       # run go vet on all modules
+make test      # run tests on all modules
+make tidy      # run go mod tidy on all modules
+make fmt       # format all Go files
 ```
 
 ### Dependency Graph
@@ -83,23 +77,24 @@ Layer 1 (depends on Layer 0):
 Each module is versioned independently using git tags with module prefix:
 
 ```bash
-# Tag a module
-git tag fault/v0.1.0
-git push origin fault/v0.1.0
+make tags                    # list latest tag for each module
+make changed                 # show modules changed since last tag
+make tag m=fault b=patch     # pkg/fault/v0.1.0 -> pkg/fault/v0.1.1
+make tag m=fault b=minor     # pkg/fault/v0.1.0 -> pkg/fault/v0.2.0
+make tag m=fault b=major     # pkg/fault/v0.1.0 -> pkg/fault/v1.0.0
+```
 
-# For modules with internal deps (Layer 1), tag Layer 0 deps first
-git tag uid/v0.1.0
-git push origin uid/v0.1.0
+For modules with internal dependencies (Layer 1), tag the dependencies first:
 
-# Then update go.mod to point to the published version and tag
-git tag crypto/v0.1.0
-git push origin crypto/v0.1.0
+```bash
+make tag m=uid b=minor       # tag dependency first
+make tag m=crypto b=minor    # then tag dependent module
 ```
 
 Consumers install specific modules at specific versions:
 
 ```bash
-go get github.com/bernardinorafael/gogem/fault@v0.1.0
+go get github.com/bernardinorafael/gogem/pkg/fault@v0.1.0
 ```
 
 ## License

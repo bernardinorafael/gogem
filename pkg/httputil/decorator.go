@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/bernardinorafael/gogem/fault"
+	"github.com/bernardinorafael/gogem/pkg/fault"
 )
 
 // Validator is an interface that defines a contract for validating data structures (DTOs).

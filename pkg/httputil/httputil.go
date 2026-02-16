@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/bernardinorafael/gogem/fault"
+	"github.com/bernardinorafael/gogem/pkg/fault"
 )
 
 const maxRequestBodyBytes = 1_048_576 // 1MB

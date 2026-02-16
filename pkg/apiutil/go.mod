@@ -1,4 +1,4 @@
-module github.com/bernardinorafael/gogem/apiutil
+module github.com/bernardinorafael/gogem/pkg/apiutil
 
 go 1.24.1
 

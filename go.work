@@ -1,16 +1,16 @@
 go 1.24.1
 
 use (
-	./apiutil
-	./cache
-	./crypto
-	./dbutil
-	./fault
-	./function
-	./httputil
-	./logger
-	./pagination
-	./queue
-	./server
-	./uid
+	./pkg/apiutil
+	./pkg/cache
+	./pkg/crypto
+	./pkg/dbutil
+	./pkg/fault
+	./pkg/function
+	./pkg/httputil
+	./pkg/logger
+	./pkg/pagination
+	./pkg/queue
+	./pkg/server
+	./pkg/uid
 )

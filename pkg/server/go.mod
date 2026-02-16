@@ -1,4 +1,4 @@
-module github.com/bernardinorafael/gogem/server
+module github.com/bernardinorafael/gogem/pkg/server
 
 go 1.24.1
 
