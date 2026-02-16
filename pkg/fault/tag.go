@@ -1,8 +1,6 @@
 package fault
 
-import (
-	"errors"
-)
+import "errors"
 
 type Tag string
 
@@ -19,9 +17,6 @@ const (
 	UnprocessableEntity Tag = "UNPROCESSABLE_ENTITY"
 	DB                  Tag = "DATABASE"
 	TX                  Tag = "DB_TRANSACTION"
-	Stripe              Tag = "STRIPE"
-	Infra               Tag = "INFRA"
-	MissingContextValue Tag = "CTX_VALUE"
 )
 
 // GetTag returns the first tag of the error
@@ -43,18 +38,9 @@ const (
 //		fmt.Println("unknown error")
 //	}
 func GetTag(err error) Tag {
-	if err == nil {
-		return Untagged
+	var f *Fault
+	if errors.As(err, &f) && f.Tag != "" {
+		return f.Tag
 	}
-
-	for err != nil {
-		var f *Fault
-		ok := errors.As(err, &f)
-		if ok && f.Tag != "" {
-			return f.Tag
-		}
-		err = errors.Unwrap(err)
-	}
-
 	return Untagged
 }

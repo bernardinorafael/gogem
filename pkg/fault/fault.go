@@ -4,12 +4,15 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strings"
 )
 
 type FieldError struct {
 	Field   string `json:"field" example:"email"`
 	Message string `json:"message" example:"invalid email format"`
+}
+
+func NewFieldError(field, message string) FieldError {
+	return FieldError{Field: field, Message: message}
 }
 
 type Fault struct {
@@ -41,55 +44,6 @@ func New(msg string, options ...func(*Fault)) *Fault {
 	}
 
 	return &fault
-}
-
-func WithValidationError(err error) func(*Fault) {
-	if err == nil {
-		return func(_ *Fault) {}
-	}
-
-	var validations []FieldError
-	split := strings.SplitSeq(err.Error(), ";")
-
-	for validation := range split {
-		validation = strings.TrimSpace(validation)
-		if validation == "" {
-			continue
-		}
-
-		parts := strings.SplitN(validation, ":", 2)
-		if len(parts) != 2 {
-			validations = append(validations, FieldError{
-				Field:   "general",
-				Message: validation,
-			})
-			continue
-		}
-
-		field := strings.TrimSpace(parts[0])
-		msg := strings.TrimSpace(parts[1])
-
-		// If the field or message is empty, skip it
-		if field == "" || msg == "" {
-			continue
-		}
-
-		removePeriod := func(s string) string {
-			if strings.HasSuffix(s, ".") {
-				return s[:len(s)-1]
-			}
-			return s
-		}
-
-		validations = append(validations, FieldError{
-			Field:   field,
-			Message: removePeriod(msg),
-		})
-	}
-
-	return func(f *Fault) {
-		f.FieldError = validations
-	}
 }
 
 // WithHTTPCode sets the HTTP code for the fault
@@ -136,8 +90,11 @@ func (f *Fault) Error() string {
 }
 
 func (f *Fault) Is(target error) bool {
-	var fault *Fault
-	return errors.As(target, &fault)
+	var t *Fault
+	if !errors.As(target, &t) {
+		return false
+	}
+	return f.Tag == t.Tag
 }
 
 func (f *Fault) Unwrap() error {

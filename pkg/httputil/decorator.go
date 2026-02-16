@@ -66,7 +66,11 @@ func WithValidation[T Validator](done http.HandlerFunc) http.HandlerFunc {
 		}
 
 		if err := body.Validate(); err != nil {
-			WriteError(w, fault.NewValidation("invalid body", err))
+			WriteError(w, fault.New(
+				err.Error(),
+				fault.WithHTTPCode(http.StatusUnprocessableEntity),
+				fault.WithTag(fault.ValidationError),
+			))
 			return
 		}
 

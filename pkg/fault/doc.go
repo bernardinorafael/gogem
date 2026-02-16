@@ -10,6 +10,10 @@
 //	err := fault.NewNotFound("user not found")
 //	err := fault.NewBadRequest("invalid email format")
 //
+// Wrapping an underlying error:
+//
+//	err := fault.NewNotFound("user not found", fault.WithErr(originalErr))
+//
 // Custom errors with options:
 //
 //	err := fault.New("payment failed",
@@ -20,8 +24,10 @@
 //
 // Validation errors with field details:
 //
-//	err := fault.NewValidation("invalid body", validationErr)
-//	// Produces: { "status": 422, "message": "invalid body", "fields": [{"field": "email", "message": "required"}] }
+//	err := fault.NewValidation("invalid body",
+//	    fault.NewFieldError("email", "required"),
+//	    fault.NewFieldError("name", "must be at least 3 characters"),
+//	)
 //
 // Extracting tags from wrapped errors:
 //
@@ -33,5 +39,6 @@
 //	}
 //
 // Fault implements Is(), Unwrap(), and Error() for seamless integration
-// with Go's errors package and error chains.
+// with Go's errors package and error chains. Is() compares by tag,
+// so errors.Is(err1, err2) returns true when both faults share the same tag.
 package fault

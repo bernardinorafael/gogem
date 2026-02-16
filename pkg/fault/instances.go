@@ -4,75 +4,75 @@ import (
 	"net/http"
 )
 
-func NewValidation(message string, err error) *Fault {
+func NewValidation(message string, fields ...FieldError) *Fault {
 	return New(
 		message,
 		WithHTTPCode(http.StatusUnprocessableEntity),
 		WithTag(ValidationError),
-		WithValidationError(err),
+		WithFieldError(fields...),
 	)
 }
 
-func NewBadRequest(message string) *Fault {
-	return New(
-		message,
+func NewBadRequest(message string, options ...func(*Fault)) *Fault {
+	defaults := []func(*Fault){
 		WithHTTPCode(http.StatusBadRequest),
 		WithTag(BadRequest),
-	)
+	}
+	return New(message, append(defaults, options...)...)
 }
 
-func NewNotFound(message string) *Fault {
-	return New(
-		message,
+func NewNotFound(message string, options ...func(*Fault)) *Fault {
+	defaults := []func(*Fault){
 		WithHTTPCode(http.StatusNotFound),
 		WithTag(NotFound),
-	)
+	}
+	return New(message, append(defaults, options...)...)
 }
 
-func NewInternalServerError(message string) *Fault {
-	return New(
-		message,
+func NewInternalServerError(message string, options ...func(*Fault)) *Fault {
+	defaults := []func(*Fault){
 		WithHTTPCode(http.StatusInternalServerError),
 		WithTag(InternalServerError),
-	)
+	}
+	return New(message, append(defaults, options...)...)
 }
 
-func NewUnauthorized(message string) *Fault {
-	return New(
-		message,
+func NewUnauthorized(message string, options ...func(*Fault)) *Fault {
+	defaults := []func(*Fault){
 		WithHTTPCode(http.StatusUnauthorized),
 		WithTag(Unauthorized),
-	)
+	}
+	return New(message, append(defaults, options...)...)
 }
 
-func NewForbidden(message string) *Fault {
-	return New(
-		message,
+func NewForbidden(message string, options ...func(*Fault)) *Fault {
+	defaults := []func(*Fault){
 		WithHTTPCode(http.StatusForbidden),
 		WithTag(Forbidden),
-	)
+	}
+	return New(message, append(defaults, options...)...)
 }
 
-func NewConflict(message string) *Fault {
-	return New(
-		message,
+func NewConflict(message string, options ...func(*Fault)) *Fault {
+	defaults := []func(*Fault){
 		WithHTTPCode(http.StatusConflict),
 		WithTag(Conflict),
-	)
+	}
+	return New(message, append(defaults, options...)...)
 }
 
-func NewTooManyRequests(message string) *Fault {
-	return New(
-		message,
+func NewTooManyRequests(message string, options ...func(*Fault)) *Fault {
+	defaults := []func(*Fault){
 		WithHTTPCode(http.StatusTooManyRequests),
 		WithTag(TooManyRequests),
-	)
+	}
+	return New(message, append(defaults, options...)...)
 }
 
-func NewUnprocessableEntity(message string) *Fault {
-	return New(
-		message,
+func NewUnprocessableEntity(message string, options ...func(*Fault)) *Fault {
+	defaults := []func(*Fault){
 		WithHTTPCode(http.StatusUnprocessableEntity),
 		WithTag(UnprocessableEntity),
-	)
+	}
+	return New(message, append(defaults, options...)...)
 }
