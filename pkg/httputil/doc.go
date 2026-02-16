@@ -4,25 +4,38 @@
 // Request body parsing with size limits and detailed error messages:
 //
 //	var body CreateUserRequest
-//	if err := httputil.ReadRequestBody(w, r, &body); err != nil {
+//	if err := httputil.ReadRequestBody(r, &body); err != nil {
 //	    httputil.WriteError(w, err)
 //	    return
 //	}
 //
-// Query parameter readers with zero-value defaults:
+// Query parameter readers with caller-defined defaults:
 //
-//	page := httputil.ReadQueryInt(r.URL.Query(), "page")           // 0 if missing
-//	sort := httputil.ReadQueryString(r.URL.Query(), "sort")        // "" if missing
-//	active := httputil.ReadQueryBool(r.URL.Query(), "active")      // false if missing
-//	tags := httputil.ReadQueryArray(r.URL.Query(), "tags")         // [] if missing
+//	page := httputil.ReadQueryInt(r.URL.Query(), "page", 1)
+//	sort := httputil.ReadQueryString(r.URL.Query(), "sort", "created_at")
+//	active := httputil.ReadQueryBool(r.URL.Query(), "active", false)
+//	tags := httputil.ReadQueryArray(r.URL.Query(), "tags")
+//
+// Optional variants return nil when the parameter is absent, allowing
+// callers to distinguish "not provided" from "provided with zero value":
+//
+//	if page := httputil.ReadQueryIntOptional(r.URL.Query(), "page"); page != nil {
+//	    // parameter was explicitly provided
+//	}
+//	if sort := httputil.ReadQueryStringOptional(r.URL.Query(), "sort"); sort != nil {
+//	    // parameter was explicitly provided
+//	}
+//	if active := httputil.ReadQueryBoolOptional(r.URL.Query(), "active"); active != nil {
+//	    // parameter was explicitly provided
+//	}
 //
 // JSON response helpers:
 //
-//	httputil.WriteJSON(w, http.StatusOK, user)
-//	httputil.WriteSuccess(w, http.StatusCreated)
-//	httputil.WriteError(w, err) // automatically extracts HTTP code from fault.Fault
+//	_ = httputil.WriteJSON(w, http.StatusOK, user)
+//	_ = httputil.WriteSuccess(w, http.StatusCreated)
+//	httputil.WriteError(w, err)
 //
-// Generic validation middleware using WithValidation[T]:
+// Generic validation middleware using WithValidation[T] and GetBody[T]:
 //
 //	type CreateUserDTO struct {
 //	    Name  string `json:"name"`
@@ -34,7 +47,7 @@
 //	}
 //
 //	router.Post("/users", httputil.WithValidation[CreateUserDTO](func(w http.ResponseWriter, r *http.Request) {
-//	    body := r.Context().Value("body").(CreateUserDTO)
+//	    body := httputil.GetBody[CreateUserDTO](r)
 //	    // body is already validated
 //	}))
 package httputil

@@ -19,49 +19,29 @@ const maxRequestBodyBytes = 1_048_576 // 1MB
 func WriteError(w http.ResponseWriter, err error) {
 	w.Header().Set("Content-Type", "application/json")
 
-	encoder := json.NewEncoder(w)
-
 	var f *fault.Fault
 	if errors.As(err, &f) {
 		w.WriteHeader(f.GetHTTPCode())
-		_ = encoder.Encode(f)
+		_ = json.NewEncoder(w).Encode(f)
 		return
 	}
 
-	switch {
-	case errors.Is(err, ErrUnknownRequestBodyKey):
-		w.WriteHeader(http.StatusBadRequest)
-		_ = encoder.Encode(fault.NewBadRequest("request body contains unknown field"))
-		return
-	case errors.Is(err, ErrEmptyRequestBody):
-		w.WriteHeader(http.StatusBadRequest)
-		_ = encoder.Encode(fault.NewBadRequest("request body cannot be empty"))
-		return
-	case errors.Is(err, ErrInvalidJSONField):
-		w.WriteHeader(http.StatusBadRequest)
-		_ = encoder.Encode(fault.NewBadRequest("request body contains incorrect JSON field type"))
-		return
-	default:
-		w.WriteHeader(http.StatusInternalServerError)
-		_ = encoder.Encode(fault.NewInternalServerError("an unexpected error occurred"))
-		return
-	}
+	w.WriteHeader(http.StatusInternalServerError)
+	_ = json.NewEncoder(w).Encode(fault.NewInternalServerError("an unexpected error occurred"))
 }
 
 // WriteSuccess writes a JSON success response with the specified HTTP status code.
-// The JSON response will contain a single key "message" with the value "success".
-func WriteSuccess(w http.ResponseWriter, code int) {
-	w.Header().Add("Content-Type", "application/json")
+func WriteSuccess(w http.ResponseWriter, code int) error {
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
-	_ = json.NewEncoder(w).Encode(map[string]string{"message": "success"})
+	return json.NewEncoder(w).Encode(map[string]string{"message": "success"})
 }
 
 // WriteJSON writes a JSON response with the specified HTTP status code and the provided data.
-// The data to be encoded as JSON should be passed as the 'dst' parameter.
-func WriteJSON(w http.ResponseWriter, code int, dst any) {
-	w.Header().Add("Content-Type", "application/json")
+func WriteJSON(w http.ResponseWriter, code int, dst any) error {
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
-	_ = json.NewEncoder(w).Encode(dst)
+	return json.NewEncoder(w).Encode(dst)
 }
 
 // ReadQueryInt reads a query string parameter from the URL values and parses it into an integer.
@@ -74,15 +54,15 @@ func WriteJSON(w http.ResponseWriter, code int, dst any) {
 // If the query string parameter "page" is not present, the default value 1 is returned.
 // If the query string parameter "page" is present but cannot be parsed as an integer,
 // the default value 1 is returned.
-func ReadQueryInt(qs url.Values, key string) int {
+func ReadQueryInt(qs url.Values, key string, defaultValue int) int {
 	val := qs.Get(key)
 	if val == "" {
-		return 0
+		return defaultValue
 	}
 
 	i, err := strconv.Atoi(val)
 	if err != nil {
-		return 0
+		return defaultValue
 	}
 
 	return i
@@ -97,15 +77,15 @@ func ReadQueryInt(qs url.Values, key string) int {
 //
 // If the query string parameter "include_archived" is not present, the default value false is returned.
 // If the query string parameter "include_archived" is present but cannot be parsed as a boolean.
-func ReadQueryBool(qs url.Values, key string) bool {
+func ReadQueryBool(qs url.Values, key string, defaultValue bool) bool {
 	val := qs.Get(key)
 	if val == "" {
-		return false
+		return defaultValue
 	}
 
 	b, err := strconv.ParseBool(val)
 	if err != nil {
-		return false
+		return defaultValue
 	}
 
 	return b
@@ -119,12 +99,72 @@ func ReadQueryBool(qs url.Values, key string) bool {
 //	sort := httputil.ReadQueryString(r.URL.Query(), "sort", "asc")
 //
 // If the query string parameter "sort" is not present, the default value "asc" is returned.
-func ReadQueryString(qs url.Values, key string) string {
+func ReadQueryString(qs url.Values, key string, defaultValue string) string {
 	val := qs.Get(key)
 	if val == "" {
-		return ""
+		return defaultValue
 	}
 	return val
+}
+
+// ReadQueryIntOptional reads a query string parameter and returns a pointer to the parsed integer.
+// Returns nil if the parameter is missing or cannot be parsed.
+//
+// Example:
+//
+//	if page := httputil.ReadQueryIntOptional(r.URL.Query(), "page"); page != nil {
+//	    // parameter was explicitly provided
+//	}
+func ReadQueryIntOptional(qs url.Values, key string) *int {
+	val := qs.Get(key)
+	if val == "" {
+		return nil
+	}
+
+	i, err := strconv.Atoi(val)
+	if err != nil {
+		return nil
+	}
+
+	return &i
+}
+
+// ReadQueryBoolOptional reads a query string parameter and returns a pointer to the parsed boolean.
+// Returns nil if the parameter is missing or cannot be parsed.
+//
+// Example:
+//
+//	if archived := httputil.ReadQueryBoolOptional(r.URL.Query(), "archived"); archived != nil {
+//	    // parameter was explicitly provided
+//	}
+func ReadQueryBoolOptional(qs url.Values, key string) *bool {
+	val := qs.Get(key)
+	if val == "" {
+		return nil
+	}
+
+	b, err := strconv.ParseBool(val)
+	if err != nil {
+		return nil
+	}
+
+	return &b
+}
+
+// ReadQueryStringOptional reads a query string parameter and returns a pointer to the string value.
+// Returns nil if the parameter is missing.
+//
+// Example:
+//
+//	if sort := httputil.ReadQueryStringOptional(r.URL.Query(), "sort"); sort != nil {
+//	    // parameter was explicitly provided
+//	}
+func ReadQueryStringOptional(qs url.Values, key string) *string {
+	val := qs.Get(key)
+	if val == "" {
+		return nil
+	}
+	return &val
 }
 
 // ReadQueryArray reads a query string parameter from the URL values and returns it as a string slice.
@@ -162,14 +202,14 @@ func ReadQueryArray(qs url.Values, key string) []string {
 //		Name string `json:"name"`
 //	}
 //
-//	err := httputil.ReadRequestBody(w, r, &body)
+//	err := httputil.ReadRequestBody(r, &body)
 //	if err != nil {
 //		// handle error here
 //	}
-func ReadRequestBody(w http.ResponseWriter, r *http.Request, dst any) error {
-	r.Body = http.MaxBytesReader(w, r.Body, int64(maxRequestBodyBytes))
+func ReadRequestBody(r *http.Request, dst any) error {
+	reader := io.LimitReader(r.Body, maxRequestBodyBytes+1)
 
-	d := json.NewDecoder(r.Body)
+	d := json.NewDecoder(reader)
 	d.DisallowUnknownFields()
 
 	err := d.Decode(dst)
@@ -177,39 +217,33 @@ func ReadRequestBody(w http.ResponseWriter, r *http.Request, dst any) error {
 		var syntaxError *json.SyntaxError
 		var unmarshalTypeError *json.UnmarshalTypeError
 		var invalidUnmarshalError *json.InvalidUnmarshalError
-		var maxBytesError *http.MaxBytesError
 
 		switch {
 		case errors.As(err, &syntaxError):
-			// JSON syntax error in the request body
-			// Offset is the exact byte where the error occurred
-			return fmt.Errorf("body contains badly-formed JSON (at character %d)", syntaxError.Offset)
+			return fault.NewBadRequest(
+				fmt.Sprintf("body contains badly-formed JSON (at character %d)", syntaxError.Offset),
+			)
 		case errors.As(err, &unmarshalTypeError):
-			// JSON value and struct type do not match
 			if unmarshalTypeError.Field != "" {
-				return ErrInvalidJSONField
+				return fault.NewBadRequest("body contains incorrect JSON field type")
 			}
-			return fmt.Errorf("body contains incorrect JSON type (at character %d)", unmarshalTypeError.Offset)
+			return fault.NewBadRequest(
+				fmt.Sprintf("body contains incorrect JSON type (at character %d)", unmarshalTypeError.Offset),
+			)
 		case errors.Is(err, io.EOF):
-			// io.EOF (End of File) indicates that there are no more bytes left to read
-			return ErrEmptyRequestBody
-		case errors.As(err, &maxBytesError):
-			return fmt.Errorf("body must not be larger than %d bytes", maxBytesError.Limit)
+			return fault.NewBadRequest("request body cannot be empty")
 		case strings.HasPrefix(err.Error(), "json: unknown field "):
-			return ErrUnknownRequestBodyKey
+			return fault.NewBadRequest("request body contains unknown field")
 		case errors.As(err, &invalidUnmarshalError):
-			// Received a non-nil pointer into Decode()
 			panic(err)
 		default:
-			return err
+			return fault.NewBadRequest(err.Error())
 		}
 	}
 
-	// Calling decode again to check if there's more data after the JSON object
-	// This will return an io.EOF error, indicating that the client sent more data
 	err = d.Decode(&struct{}{})
 	if !errors.Is(err, io.EOF) {
-		return fmt.Errorf("decode: body must only contain a single JSON value: %w", err)
+		return fault.NewBadRequest("body must only contain a single JSON value")
 	}
 
 	return nil

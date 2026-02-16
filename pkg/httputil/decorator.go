@@ -7,6 +7,14 @@ import (
 	"github.com/bernardinorafael/gogem/pkg/fault"
 )
 
+type contextKey struct{}
+
+// GetBody extracts the validated request body from the context.
+// Must be used in handlers wrapped with WithValidation[T].
+func GetBody[T any](r *http.Request) T {
+	return r.Context().Value(contextKey{}).(T)
+}
+
 // Validator is an interface that defines a contract for validating data structures (DTOs).
 // Any DTO representing the body of a request must implement this Validate method,
 // returning an error if any validation rule is not met.
@@ -52,7 +60,7 @@ type Validator interface {
 func WithValidation[T Validator](done http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var body T
-		if err := ReadRequestBody(w, r, &body); err != nil {
+		if err := ReadRequestBody(r, &body); err != nil {
 			WriteError(w, err)
 			return
 		}
@@ -62,9 +70,7 @@ func WithValidation[T Validator](done http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
-		ctx := r.Context()
-		// ctx = context.WithValue(ctx, RequestKey{}, body)
-		ctx = context.WithValue(ctx, "body", body)
+		ctx := context.WithValue(r.Context(), contextKey{}, body)
 		r = r.WithContext(ctx)
 
 		done(w, r)
