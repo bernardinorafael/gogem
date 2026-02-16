@@ -1,23 +1,107 @@
-# gogem Package
+# gogem
 
-## Description
+A collection of reusable Go packages for building web applications. Each package is an independent Go module, versioned and released separately.
 
-This package provides a collection of utility packages that assist with basic tasks in Go.
+## Installation
+
+Install only the packages you need:
+
+```bash
+go get github.com/bernardinorafael/gogem/fault@latest
+go get github.com/bernardinorafael/gogem/httputil@latest
+go get github.com/bernardinorafael/gogem/uid@latest
+```
 
 ## Packages
 
-### fault Package
+| Package | Description | Dependencies |
+|---------|-------------|-------------|
+| [`fault`](./fault) | Standardized REST error type with HTTP codes, tags, and field-level validation errors | - |
+| [`httputil`](./httputil) | Request parsing, JSON response writing, and `WithValidation[T]` generic middleware | fault |
+| [`pagination`](./pagination) | Generic `Paginated[T]` container with computed metadata | - |
+| [`uid`](./uid) | K-Sortable unique identifier generation with optional prefixes | - |
+| [`function`](./function) | Generic `Map` and `ForEach` utilities | - |
+| [`apiutil`](./apiutil) | Generic `Expandable[T]` for API responses (marshals as ID or full object) | uid |
+| [`dbutil`](./dbutil) | PostgreSQL helpers: constraint violation detection, JSONB type, transaction wrapper | fault, sqlx, lib/pq |
+| [`cache`](./cache) | Redis wrapper with generic `GetOrSet[T]` pattern | fault, go-redis, charmbracelet/log |
+| [`crypto`](./crypto) | Password hashing (bcrypt), JWT tokens (HS256), OTP generation (HMAC-SHA256) | uid, golang-jwt, x/crypto |
+| [`queue`](./queue) | AWS SQS client wrapper (publish, consume, delete) | aws-sdk-go-v2 |
+| [`logger`](./logger) | Structured logging (JSON in production, text in development) | charmbracelet/log |
+| [`server`](./server) | HTTP server with chi router, sensible defaults, and graceful shutdown | go-chi |
 
-This package provides a structure and functions for handling errors in a RESTful format. It helps standardize error responses in APIs
+## Development
 
-### httputil Package
+This is a multi-module repository. Each package has its own `go.mod` and is developed using [Go workspaces](https://go.dev/doc/tutorial/workspaces).
 
-This package provides a collection of utilities for HTTP/REST handlers, making it easier to create and manage responses and requests.
+### Prerequisites
 
-### pagination Package
+- Go 1.24.1+
 
-This package provides functionalities to handle pagination of results, useful for dividing large datasets into API responses.
+### Setup
 
-### uid Package
+Clone the repository. The `go.work` file at the root links all modules for local development:
 
-This package provides functions for generating KSUIDs (K-Sortable Unique Identifiers).
+```bash
+git clone https://github.com/bernardinorafael/gogem.git
+cd gogem
+```
+
+All modules are already listed in `go.work`, so cross-module imports resolve locally.
+
+### Commands
+
+```bash
+# Vet a specific module
+cd fault && go vet ./...
+
+# Run tests for a specific module
+cd fault && go test ./...
+
+# Tidy a specific module's dependencies
+cd fault && go mod tidy
+
+# Format all code
+gofmt -w .
+```
+
+### Dependency Graph
+
+```
+Layer 0 (no internal deps):
+  fault, pagination, uid, function, queue, logger, server
+
+Layer 1 (depends on Layer 0):
+  httputil → fault
+  dbutil   → fault
+  cache    → fault
+  apiutil  → uid
+  crypto   → uid
+```
+
+### Releasing a Module
+
+Each module is versioned independently using git tags with module prefix:
+
+```bash
+# Tag a module
+git tag fault/v0.1.0
+git push origin fault/v0.1.0
+
+# For modules with internal deps (Layer 1), tag Layer 0 deps first
+git tag uid/v0.1.0
+git push origin uid/v0.1.0
+
+# Then update go.mod to point to the published version and tag
+git tag crypto/v0.1.0
+git push origin crypto/v0.1.0
+```
+
+Consumers install specific modules at specific versions:
+
+```bash
+go get github.com/bernardinorafael/gogem/fault@v0.1.0
+```
+
+## License
+
+MIT
