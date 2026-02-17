@@ -11,4 +11,5 @@ type Logger interface {
 	Errorf(format string, args ...any)
 	Fatal(msg any, keyvals ...any)
 	Fatalf(format string, args ...any)
+	With(keyvals ...any) Logger
 }

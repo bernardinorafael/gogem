@@ -11,6 +11,22 @@ import (
 
 type loggerKey struct{}
 
+type wrapper struct {
+	inner *log.Logger
+}
+
+func (w wrapper) Debug(msg any, keyvals ...any)      { w.inner.Debug(msg, keyvals...) }
+func (w wrapper) Debugf(format string, args ...any)  { w.inner.Debugf(format, args...) }
+func (w wrapper) Info(msg any, keyvals ...any)        { w.inner.Info(msg, keyvals...) }
+func (w wrapper) Infof(format string, args ...any)   { w.inner.Infof(format, args...) }
+func (w wrapper) Warn(msg any, keyvals ...any)        { w.inner.Warn(msg, keyvals...) }
+func (w wrapper) Warnf(format string, args ...any)   { w.inner.Warnf(format, args...) }
+func (w wrapper) Error(msg any, keyvals ...any)       { w.inner.Error(msg, keyvals...) }
+func (w wrapper) Errorf(format string, args ...any)  { w.inner.Errorf(format, args...) }
+func (w wrapper) Fatal(msg any, keyvals ...any)       { w.inner.Fatal(msg, keyvals...) }
+func (w wrapper) Fatalf(format string, args ...any)  { w.inner.Fatalf(format, args...) }
+func (w wrapper) With(keyvals ...any) Logger         { return wrapper{inner: w.inner.With(keyvals...)} }
+
 func New(opts ...func(*config)) Logger {
 	cfg := config{
 		output:      os.Stdout,
@@ -31,13 +47,14 @@ func New(opts ...func(*config)) Logger {
 		timeFormat = time.Kitchen
 	}
 
-	return log.NewWithOptions(cfg.output, log.Options{
+	inner := log.NewWithOptions(cfg.output, log.Options{
 		TimeFormat:      timeFormat,
 		Formatter:       formatter,
 		ReportTimestamp: true,
 		Prefix:          cfg.prefix,
 		Level:           cfg.level,
 	})
+	return wrapper{inner: inner}
 }
 
 type config struct {
@@ -90,5 +107,5 @@ func FromContext(ctx context.Context) Logger {
 	if l, ok := ctx.Value(loggerKey{}).(Logger); ok {
 		return l
 	}
-	return log.Default()
+	return wrapper{inner: log.Default()}
 }
