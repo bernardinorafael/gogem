@@ -11,15 +11,6 @@ import (
 
 type loggerKey struct{}
 
-type Environment string
-
-type Logger *log.Logger
-
-const (
-	Development Environment = "development"
-	Production  Environment = "production"
-)
-
 func New(opts ...func(*config)) Logger {
 	cfg := config{
 		output:      os.Stdout,
@@ -40,15 +31,13 @@ func New(opts ...func(*config)) Logger {
 		timeFormat = time.Kitchen
 	}
 
-	logger := log.NewWithOptions(cfg.output, log.Options{
+	return log.NewWithOptions(cfg.output, log.Options{
 		TimeFormat:      timeFormat,
 		Formatter:       formatter,
 		ReportTimestamp: true,
 		Prefix:          cfg.prefix,
 		Level:           cfg.level,
 	})
-
-	return logger
 }
 
 type config struct {
@@ -91,14 +80,14 @@ func WithTimeFormat(format string) func(*config) {
 
 // WithContext stores a logger in the context. Use this in middleware
 // to propagate an enriched logger through the request lifecycle.
-func WithContext(ctx context.Context, l *log.Logger) context.Context {
+func WithContext(ctx context.Context, l Logger) context.Context {
 	return context.WithValue(ctx, loggerKey{}, l)
 }
 
 // FromContext retrieves the logger from the context.
 // Returns the default logger (production, info level) if none is found.
-func FromContext(ctx context.Context) *log.Logger {
-	if l, ok := ctx.Value(loggerKey{}).(*log.Logger); ok {
+func FromContext(ctx context.Context) Logger {
+	if l, ok := ctx.Value(loggerKey{}).(Logger); ok {
 		return l
 	}
 	return log.Default()
