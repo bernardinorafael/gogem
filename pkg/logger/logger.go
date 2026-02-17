@@ -13,12 +13,14 @@ type loggerKey struct{}
 
 type Environment string
 
+type Logger *log.Logger
+
 const (
 	Development Environment = "development"
 	Production  Environment = "production"
 )
 
-func New(opts ...func(*config)) *log.Logger {
+func New(opts ...func(*config)) Logger {
 	cfg := config{
 		output:      os.Stdout,
 		level:       log.InfoLevel,
