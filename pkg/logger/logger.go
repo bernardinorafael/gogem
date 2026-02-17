@@ -16,8 +16,8 @@ type Environment string
 type Logger *log.Logger
 
 const (
-	Development Environment = "development"
 	Production  Environment = "production"
+	Development Environment = "development"
 )
 
 func New(opts ...func(*config)) Logger {
